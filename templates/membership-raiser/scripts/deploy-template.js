@@ -70,6 +70,8 @@ module.exports = async function deployTemplate(
   if (!templateName) errorOut('Missing template id.')
   if (!contractName) errorOut('Missing template contract name.')
 
+  console.log('TemplatesDeployer', { web3, artifacts, owner })
+
   const deployer = new TemplatesDeployer(web3, artifacts, owner, {
     apps,
     ens,
