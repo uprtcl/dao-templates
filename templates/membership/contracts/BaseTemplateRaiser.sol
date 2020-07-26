@@ -5,7 +5,6 @@ import "@aragon/apps-vault/contracts/Vault.sol";
 import "@aragon/apps-voting/contracts/Voting.sol";
 import "@aragon/apps-payroll/contracts/Payroll.sol";
 import "@aragon/apps-finance/contracts/Finance.sol";
-import "@aragon/apps-token-manager/contracts/TokenManager.sol";
 import "@aragon/apps-survey/contracts/Survey.sol";
 
 import "@aragon/os/contracts/acl/ACL.sol";
@@ -19,7 +18,8 @@ import "@aragon/os/contracts/common/IsContract.sol";
 import "@aragon/os/contracts/common/Uint256Helpers.sol";
 import "@aragon/id/contracts/IFIFSResolvingRegistrar.sol";
 
-import "./MiniMeTokenRaiser.sol";
+import './MiniMeTokenRaiser.sol';
+import './TokenManagerRaiser.sol';
 
 contract BaseTemplateRaiser is APMNamehash, IsContract {
     using Uint256Helpers for uint256;
@@ -52,7 +52,7 @@ contract BaseTemplateRaiser is APMNamehash, IsContract {
 
     ENS internal ens;
     DAOFactory internal daoFactory;
-    MiniMeTokenFactory internal miniMeFactory;
+    MiniMeTokenRaiserFactory internal miniMeFactory;
     IFIFSResolvingRegistrar internal aragonID;
 
     event DeployDao(address dao);
@@ -60,7 +60,7 @@ contract BaseTemplateRaiser is APMNamehash, IsContract {
     event DeployToken(address token);
     event InstalledApp(address appProxy, bytes32 appId);
 
-    constructor(DAOFactory _daoFactory, ENS _ens, MiniMeTokenFactory _miniMeFactory, IFIFSResolvingRegistrar _aragonID) public {
+    constructor(DAOFactory _daoFactory, ENS _ens, MiniMeTokenRaiserFactory _miniMeFactory, IFIFSResolvingRegistrar _aragonID) public {
         require(isContract(address(_ens)), ERROR_ENS_NOT_CONTRACT);
         require(isContract(address(_daoFactory)), ERROR_DAO_FACTORY_NOT_CONTRACT);
 
@@ -292,20 +292,20 @@ contract BaseTemplateRaiser is APMNamehash, IsContract {
         bool _transferable,
         uint256 _maxAccountTokens
     )
-        internal returns (TokenManager)
+        internal returns (TokenManagerRaiser)
     {
-        TokenManager tokenManager = TokenManager(_installNonDefaultApp(_dao, TOKEN_MANAGER_APP_ID));
+        TokenManagerRaiser tokenManager = TokenManagerRaiser(_installNonDefaultApp(_dao, TOKEN_MANAGER_APP_ID));
         _token.changeController(tokenManager);
         tokenManager.initialize(_token, _transferable, _maxAccountTokens);
         return tokenManager;
     }
 
-    function _createTokenManagerPermissions(ACL _acl, TokenManager _tokenManager, address _grantee, address _manager) internal {
+    function _createTokenManagerPermissions(ACL _acl, TokenManagerRaiser _tokenManager, address _grantee, address _manager) internal {
         _acl.createPermission(_grantee, _tokenManager, _tokenManager.MINT_ROLE(), _manager);
         _acl.createPermission(_grantee, _tokenManager, _tokenManager.BURN_ROLE(), _manager);
     }
 
-    function _mintTokens(ACL _acl, TokenManager _tokenManager, address[] memory _holders, uint256[] memory _stakes) internal {
+    function _mintTokens(ACL _acl, TokenManagerRaiser _tokenManager, address[] memory _holders, uint256[] memory _stakes) internal {
         _createPermissionForTemplate(_acl, _tokenManager, _tokenManager.MINT_ROLE());
         for (uint256 i = 0; i < _holders.length; i++) {
             _tokenManager.mint(_holders[i], _stakes[i]);
@@ -313,7 +313,7 @@ contract BaseTemplateRaiser is APMNamehash, IsContract {
         _removePermissionFromTemplate(_acl, _tokenManager, _tokenManager.MINT_ROLE());
     }
 
-    function _mintTokens(ACL _acl, TokenManager _tokenManager, address[] memory _holders, uint256 _stake) internal {
+    function _mintTokens(ACL _acl, TokenManagerRaiser _tokenManager, address[] memory _holders, uint256 _stake) internal {
         _createPermissionForTemplate(_acl, _tokenManager, _tokenManager.MINT_ROLE());
         for (uint256 i = 0; i < _holders.length; i++) {
             _tokenManager.mint(_holders[i], _stake);
@@ -321,7 +321,7 @@ contract BaseTemplateRaiser is APMNamehash, IsContract {
         _removePermissionFromTemplate(_acl, _tokenManager, _tokenManager.MINT_ROLE());
     }
 
-    function _mintTokens(ACL _acl, TokenManager _tokenManager, address _holder, uint256 _stake) internal {
+    function _mintTokens(ACL _acl, TokenManagerRaiser _tokenManager, address _holder, uint256 _stake) internal {
         _createPermissionForTemplate(_acl, _tokenManager, _tokenManager.MINT_ROLE());
         _tokenManager.mint(_holder, _stake);
         _removePermissionFromTemplate(_acl, _tokenManager, _tokenManager.MINT_ROLE());
@@ -367,7 +367,7 @@ contract BaseTemplateRaiser is APMNamehash, IsContract {
 
     /* TOKEN */
 
-    function _createToken(string memory _name, string memory _symbol, uint8 _decimals) internal returns (MiniMeToken) {
+    function _createToken(string memory _name, string memory _symbol, uint8 _decimals, uint target) internal returns (MiniMeTokenRaiser) {
         require(address(miniMeFactory) != address(0), ERROR_MINIME_FACTORY_NOT_PROVIDED);
         MiniMeTokenRaiser token = miniMeFactory.createCloneToken(MiniMeTokenRaiser(address(0)), 0, _name, _decimals, _symbol, true, target);
         emit DeployToken(address(token));

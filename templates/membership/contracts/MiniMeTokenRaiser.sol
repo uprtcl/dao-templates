@@ -24,9 +24,9 @@ import "@aragon/os/contracts/lib/math/SafeMath.sol";
 ///  affecting the original token
 /// @dev It is ERC20 compliant, but still needs to under go further testing.
 
-import "./ITokenController.sol";
+import "./ITokenControllerX.sol";
 
-contract Controlled {
+contract ControlledX {
     /// @notice The address of the controller is the only address that can call
     ///  a function with this modifier
     modifier onlyController {
@@ -45,7 +45,7 @@ contract Controlled {
     }
 }
 
-contract ApproveAndCallFallBack {
+contract ApproveAndCallFallBackX {
     function receiveApproval(
         address from,
         uint256 _amount,
@@ -57,7 +57,7 @@ contract ApproveAndCallFallBack {
 /// @dev The actual token contract, the default controller is the msg.sender
 ///  that deploys the contract, so usually this token will be deployed by a
 ///  token controller contract, which Giveth will call a "Campaign"
-contract MiniMeTokenRaiser is Controlled {
+contract MiniMeTokenRaiser is ControlledX {
 
     using SafeMath   for uint256;
 
@@ -109,7 +109,7 @@ contract MiniMeTokenRaiser is Controlled {
     bool public transfersEnabled;
 
     // The factory used to create new clone tokens
-    MiniMeTokenFactory public tokenFactory;
+    MiniMeTokenRaiserFactory public tokenFactory;
 
     modifier onlyWhileRaising {
         require(raising == true, "contract not on raising mode");
@@ -132,7 +132,7 @@ contract MiniMeTokenRaiser is Controlled {
 ////////////////
 
     /// @notice Constructor to create a MiniMeTokenRaiser
-    /// @param _tokenFactory The address of the MiniMeTokenFactory contract that
+    /// @param _tokenFactory The address of the MiniMeTokenRaiserFactory contract that
     ///  will create the Clone token contracts, the token factory needs to be
     ///  deployed first
     /// @param _parentToken Address of the parent token, set to 0x0 if it is a
@@ -145,7 +145,7 @@ contract MiniMeTokenRaiser is Controlled {
     /// @param _tokenSymbol Token Symbol for the new token
     /// @param _transfersEnabled If true, tokens will be able to be transferred
     constructor(
-        MiniMeTokenFactory _tokenFactory,
+        MiniMeTokenRaiserFactory _tokenFactory,
         MiniMeTokenRaiser _parentToken,
         uint _parentSnapShotBlock,
         string _tokenName,
@@ -227,7 +227,7 @@ contract MiniMeTokenRaiser is Controlled {
         // Alerts the token controller of the transfer
         if (isContract(controller)) {
             // Adding the ` == true` makes the linter shut up so...
-            require(ITokenController(controller).onTransfer(_from, _to, _amount) == true);
+            require(ITokenControllerX(controller).onTransfer(_from, _to, _amount) == true);
         }
         // First update the balance array with the new value for the address
         //  sending the tokens
@@ -266,7 +266,7 @@ contract MiniMeTokenRaiser is Controlled {
         // Alerts the token controller of the approve function call
         if (isContract(controller)) {
             // Adding the ` == true` makes the linter shut up so...
-            require(ITokenController(controller).onApprove(msg.sender, _spender, _amount) == true);
+            require(ITokenControllerX(controller).onApprove(msg.sender, _spender, _amount) == true);
         }
 
         allowed[msg.sender][_spender] = _amount;
@@ -290,7 +290,7 @@ contract MiniMeTokenRaiser is Controlled {
     /// @param _spender The address of the contract able to transfer the tokens
     /// @param _amount The amount of tokens to be approved for transfer
     /// @return True if the function call was successful
-    function approveAndCall(ApproveAndCallFallBack _spender, uint256 _amount, bytes _extraData) public returns (bool success) {
+    function approveAndCall(ApproveAndCallFallBackX _spender, uint256 _amount, bytes _extraData) public returns (bool success) {
         require(approve(_spender, _amount));
 
         _spender.receiveApproval(
@@ -548,7 +548,7 @@ contract MiniMeTokenRaiser is Controlled {
     function () external payable {
         require(isContract(controller));
         // Adding the ` == true` makes the linter shut up so...
-        require(ITokenController(controller).proxyPayment.value(msg.value)(msg.sender) == true);
+        require(ITokenControllerX(controller).proxyPayment.value(msg.value)(msg.sender) == true);
     }
 
 //////////
@@ -589,13 +589,13 @@ contract MiniMeTokenRaiser is Controlled {
 
 
 ////////////////
-// MiniMeTokenFactory
+// MiniMeTokenRaiserFactory
 ////////////////
 
 /// @dev This contract is used to generate clone contracts from a contract.
 ///  In solidity this is the way to create a contract from a contract of the
 ///  same class
-contract MiniMeTokenFactory {
+contract MiniMeTokenRaiserFactory {
 
     /// @notice Update the DApp by creating a new token with new functionalities
     ///  the msg.sender becomes the controller of this clone token

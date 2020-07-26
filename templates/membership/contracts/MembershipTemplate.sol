@@ -1,11 +1,10 @@
 pragma solidity 0.4.24;
 
-import "@aragon/templates-shared/contracts/TokenCache.sol";
-
 import './MiniMeTokenRaiser.sol';
 import './BaseTemplateRaiser.sol';
+import './TokenCacheRaiser.sol';
 
-contract MembershipTemplate is BaseTemplateRaiser, TokenCache {
+contract MembershipTemplate is BaseTemplateRaiser, TokenCacheRaiser {
     string constant private ERROR_MISSING_MEMBERS = "MEMBERSHIP_MISSING_MEMBERS";
     string constant private ERROR_BAD_VOTE_SETTINGS = "MEMBERSHIP_BAD_VOTE_SETTINGS";
     string constant private ERROR_BAD_PAYROLL_SETTINGS = "MEMBERSHIP_BAD_PAYROLL_SETTINGS";
@@ -15,7 +14,7 @@ contract MembershipTemplate is BaseTemplateRaiser, TokenCache {
     uint256 constant private TOKEN_MAX_PER_ACCOUNT = uint256(1);
     uint64 constant private DEFAULT_FINANCE_PERIOD = uint64(30 days);
 
-    constructor(DAOFactory _daoFactory, ENS _ens, MiniMeTokenFactory _miniMeFactory, IFIFSResolvingRegistrar _aragonID)
+    constructor(DAOFactory _daoFactory, ENS _ens, MiniMeTokenRaiserFactory _miniMeFactory, IFIFSResolvingRegistrar _aragonID)
         BaseTemplateRaiser(_daoFactory, _ens, _miniMeFactory, _aragonID)
         public
     {
@@ -133,7 +132,7 @@ contract MembershipTemplate is BaseTemplateRaiser, TokenCache {
         MiniMeTokenRaiser token = _popTokenCache(msg.sender);
         Vault agentOrVault = _useAgentAsVault ? _installDefaultAgentApp(_dao) : _installVaultApp(_dao);
         Finance finance = _installFinanceApp(_dao, agentOrVault, _financePeriod == 0 ? DEFAULT_FINANCE_PERIOD : _financePeriod);
-        TokenManager tokenManager = _installTokenManagerApp(_dao, token, TOKEN_TRANSFERABLE, TOKEN_MAX_PER_ACCOUNT);
+        TokenManagerRaiser tokenManager = _installTokenManagerApp(_dao, token, TOKEN_TRANSFERABLE, TOKEN_MAX_PER_ACCOUNT);
         Voting voting = _installVotingApp(_dao, token, _votingSettings);
 
         _mintTokens(_acl, tokenManager, _members, 1);
@@ -156,7 +155,7 @@ contract MembershipTemplate is BaseTemplateRaiser, TokenCache {
         Vault _agentOrVault,
         Voting _voting,
         Finance _finance,
-        TokenManager _tokenManager,
+        TokenManagerRaiser _tokenManager,
         bool _useAgentAsVault
     )
         internal
