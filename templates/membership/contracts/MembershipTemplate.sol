@@ -1,10 +1,11 @@
 pragma solidity 0.4.24;
 
 import "@aragon/templates-shared/contracts/TokenCache.sol";
-import "@aragon/templates-shared/contracts/BaseTemplate.sol";
 
+import './MiniMeTokenRaiser.sol';
+import './BaseTemplateRaiser.sol';
 
-contract MembershipTemplate is BaseTemplate, TokenCache {
+contract MembershipTemplate is BaseTemplateRaiser, TokenCache {
     string constant private ERROR_MISSING_MEMBERS = "MEMBERSHIP_MISSING_MEMBERS";
     string constant private ERROR_BAD_VOTE_SETTINGS = "MEMBERSHIP_BAD_VOTE_SETTINGS";
     string constant private ERROR_BAD_PAYROLL_SETTINGS = "MEMBERSHIP_BAD_PAYROLL_SETTINGS";
@@ -15,7 +16,7 @@ contract MembershipTemplate is BaseTemplate, TokenCache {
     uint64 constant private DEFAULT_FINANCE_PERIOD = uint64(30 days);
 
     constructor(DAOFactory _daoFactory, ENS _ens, MiniMeTokenFactory _miniMeFactory, IFIFSResolvingRegistrar _aragonID)
-        BaseTemplate(_daoFactory, _ens, _miniMeFactory, _aragonID)
+        BaseTemplateRaiser(_daoFactory, _ens, _miniMeFactory, _aragonID)
         public
     {
         _ensureAragonIdIsValid(_aragonID);
@@ -40,11 +41,12 @@ contract MembershipTemplate is BaseTemplate, TokenCache {
         address[] _members,
         uint64[3] _votingSettings,
         uint64 _financePeriod,
-        bool _useAgentAsVault
+        bool _useAgentAsVault,
+        uint target
     )
         external
     {
-        newToken(_tokenName, _tokenSymbol);
+        newToken(_tokenName, _tokenSymbol, target);
         newInstance(_id, _members, _votingSettings, _financePeriod, _useAgentAsVault);
     }
 
@@ -53,8 +55,8 @@ contract MembershipTemplate is BaseTemplate, TokenCache {
     * @param _name String with the name for the token used by share holders in the organization
     * @param _symbol String with the symbol for the token used by share holders in the organization
     */
-    function newToken(string memory _name, string memory _symbol) public returns (MiniMeToken) {
-        MiniMeToken token = _createToken(_name, _symbol, TOKEN_DECIMALS);
+    function newToken(string memory _name, string memory _symbol, uint target) public returns (MiniMeTokenRaiser) {
+        MiniMeTokenRaiser token = _createToken(_name, _symbol, TOKEN_DECIMALS, target);
         _cacheToken(token, msg.sender);
         return token;
     }
@@ -128,7 +130,7 @@ contract MembershipTemplate is BaseTemplate, TokenCache {
         internal
         returns (Finance, Voting)
     {
-        MiniMeToken token = _popTokenCache(msg.sender);
+        MiniMeTokenRaiser token = _popTokenCache(msg.sender);
         Vault agentOrVault = _useAgentAsVault ? _installDefaultAgentApp(_dao) : _installVaultApp(_dao);
         Finance finance = _installFinanceApp(_dao, agentOrVault, _financePeriod == 0 ? DEFAULT_FINANCE_PERIOD : _financePeriod);
         TokenManager tokenManager = _installTokenManagerApp(_dao, token, TOKEN_TRANSFERABLE, TOKEN_MAX_PER_ACCOUNT);
