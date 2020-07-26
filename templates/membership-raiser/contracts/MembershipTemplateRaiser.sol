@@ -4,7 +4,7 @@ import './MiniMeTokenRaiser.sol';
 import './BaseTemplateRaiser.sol';
 import './TokenCacheRaiser.sol';
 
-contract MembershipTemplate is BaseTemplateRaiser, TokenCacheRaiser {
+contract MembershipTemplateRaiser is BaseTemplateRaiser, TokenCacheRaiser {
     string constant private ERROR_MISSING_MEMBERS = "MEMBERSHIP_MISSING_MEMBERS";
     string constant private ERROR_BAD_VOTE_SETTINGS = "MEMBERSHIP_BAD_VOTE_SETTINGS";
     string constant private ERROR_BAD_PAYROLL_SETTINGS = "MEMBERSHIP_BAD_PAYROLL_SETTINGS";
